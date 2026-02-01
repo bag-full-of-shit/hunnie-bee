@@ -48,3 +48,22 @@ export interface GoalWithProgress extends Goal {
   remainingCount: number;
   remainingDays: number;
 }
+
+// Bee interaction state (simplified with single "bond" value)
+export interface BeeState {
+  name: string;
+  bond: number; // 0-100, represents relationship/trust level
+  honeyCount: number;
+  lastInteractionAt: string; // ISO 8601
+  lastCheckedAt: string; // ISO 8601 - for daily decay calculation
+}
+
+// Bee mood status
+export type BeeMood = 'happy' | 'content' | 'grumpy' | 'upset';
+
+export interface BeeStatusInfo {
+  mood: BeeMood;
+  emoji: string;
+  message: string;
+  canChat: boolean; // true if bee is willing to communicate
+}

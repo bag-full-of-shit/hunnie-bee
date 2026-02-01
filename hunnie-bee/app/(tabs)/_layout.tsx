@@ -34,6 +34,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="bee"
+        options={{
+          title: 'My Bee',
+          headerTitle: 'My Bee 🐝',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="heart" size={28} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',

@@ -10,6 +10,7 @@ import {
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useGoalStore } from '../../stores/goalStore';
+import { useBeeStore } from '../../stores/beeStore';
 import { HoneycombGrid, ProgressDisplay, Button } from '../../components';
 import { Colors, Spacing, FontSize } from '../../constants';
 import { formatDate, isToday } from '../../utils';
@@ -18,6 +19,7 @@ export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { getGoalWithProgress, addRecord, deleteGoal, loadData, records } = useGoalStore();
+  const { earnHoney } = useBeeStore();
   const [isRecording, setIsRecording] = useState(false);
   const [justRecorded, setJustRecorded] = useState(false);
 
@@ -46,6 +48,7 @@ export default function GoalDetailScreen() {
     setIsRecording(true);
     try {
       await addRecord(goal.id);
+      await earnHoney(1); // Earn 1 honey for completing a goal
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setJustRecorded(true);
 

@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { useGoalStore } from '../stores/goalStore';
+import { useBeeStore } from '../stores/beeStore';
 
 export default function RootLayout() {
   const loadData = useGoalStore((state) => state.loadData);
+  const loadBeeState = useBeeStore((state) => state.loadBeeState);
 
   useEffect(() => {
     loadData();
+    loadBeeState();
   }, []);
 
   return (
