@@ -1,0 +1,48 @@
+{
+  "projectName": "Hunnie-Bee",
+  "currentPhaseId": "completed",
+  "phases": [
+    {
+      "id": "stage-0",
+      "name": "Ideation",
+      "status": "completed",
+      "startedAt": "2026-02-01T07:15:00Z",
+      "completedAt": "2026-02-01T07:20:00Z",
+      "artifacts": ["outputs/stage-0/idea-brief.md"]
+    },
+    {
+      "id": "stage-1",
+      "name": "Planning",
+      "status": "completed",
+      "startedAt": "2026-02-01T07:20:00Z",
+      "completedAt": "2026-02-01T07:25:00Z",
+      "artifacts": ["outputs/stage-1/prd.md"]
+    },
+    {
+      "id": "stage-2",
+      "name": "Design",
+      "status": "completed",
+      "startedAt": "2026-02-01T07:25:00Z",
+      "completedAt": "2026-02-01T07:30:00Z",
+      "artifacts": ["outputs/stage-2/design-spec.md"]
+    },
+    {
+      "id": "stage-3",
+      "name": "Development",
+      "status": "completed",
+      "startedAt": "2026-02-01T07:30:00Z",
+      "completedAt": "2026-02-01T07:45:00Z",
+      "artifacts": ["outputs/stage-3/build-config.md", "hunnie-bee/"]
+    },
+    {
+      "id": "stage-4",
+      "name": "Deployment",
+      "status": "completed",
+      "startedAt": "2026-02-01T07:45:00Z",
+      "completedAt": "2026-02-01T07:50:00Z",
+      "artifacts": ["outputs/stage-4/deployment-complete.md"]
+    }
+  ],
+  "createdAt": "2026-02-01T00:00:00Z",
+  "updatedAt": "2026-02-01T07:50:00Z"
+}
