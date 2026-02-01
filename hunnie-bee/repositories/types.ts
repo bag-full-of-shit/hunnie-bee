@@ -1,6 +1,6 @@
 import { Goal, GoalRecord, CreateGoalInput, UpdateGoalInput } from '../types';
 
-// Repository 인터페이스 - 추후 Supabase 등으로 교체 가능
+// Repository interface - can be replaced with Supabase etc. later
 export interface IGoalRepository {
   // Goals
   getAllGoals(): Promise<Goal[]>;

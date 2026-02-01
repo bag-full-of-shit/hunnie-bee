@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
@@ -7,28 +7,39 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#F59E0B',
         tabBarInactiveTintColor: '#9CA3AF',
+        tabBarShowLabel: false,
+        tabBarStyle: {
+          height: 80,
+          paddingTop: 12,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: '홈',
+          title: 'Home',
           headerTitle: 'Hunnie-Bee 🐝',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>🏠</Text>,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home" size={28} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: '기록',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📊</Text>,
+          title: 'History',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="bar-chart" size={28} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: '설정',
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>⚙️</Text>,
+          title: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings-sharp" size={28} color={color} />
+          ),
         }}
       />
     </Tabs>

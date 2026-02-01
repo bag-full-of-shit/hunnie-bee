@@ -10,18 +10,18 @@ interface ProgressDisplayProps {
 export const ProgressDisplay: React.FC<ProgressDisplayProps> = ({ goal }) => {
   const getEncouragementMessage = (): string => {
     if (goal.currentCount >= goal.targetCount) {
-      return '목표를 달성했어요! 대단해요!';
+      return 'Goal achieved! Amazing!';
     }
     if (goal.progressPercent >= 80) {
-      return '거의 다 왔어요! 조금만 더!';
+      return 'Almost there! Keep going!';
     }
     if (goal.progressPercent >= 50) {
-      return '반을 넘었어요! 잘하고 있어요!';
+      return 'Halfway done! Great job!';
     }
     if (goal.progressPercent >= 25) {
-      return '좋은 시작이에요! 계속 가요!';
+      return 'Great start! Keep it up!';
     }
-    return `${goal.remainingCount}번 더 하면 목표 달성!`;
+    return `${goal.remainingCount} more to go!`;
   };
 
   return (
@@ -35,7 +35,7 @@ export const ProgressDisplay: React.FC<ProgressDisplayProps> = ({ goal }) => {
         <Text style={styles.targetCount}>{goal.targetCount}</Text>
       </View>
 
-      <Text style={styles.percent}>{goal.progressPercent}% 달성</Text>
+      <Text style={styles.percent}>{goal.progressPercent}% complete</Text>
       <Text style={styles.encouragement}>{getEncouragementMessage()}</Text>
     </View>
   );

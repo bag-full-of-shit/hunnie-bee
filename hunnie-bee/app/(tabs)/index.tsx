@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useGoalStore } from '../../stores/goalStore';
-import { GoalCard } from '../../components';
+import { GoalCard, BeeStatus } from '../../components';
 import { Colors, Spacing, FontSize } from '../../constants';
+import { getBeeStatus } from '../../utils';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { isLoading, getAllGoalsWithProgress } = useGoalStore();
   const goals = getAllGoalsWithProgress();
+
+  const beeStatus = useMemo(() => getBeeStatus(goals), [goals]);
 
   const handleGoalPress = (goalId: string) => {
     router.push(`/goal/${goalId}`);
@@ -37,12 +40,12 @@ export default function HomeScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyEmoji}>🐝</Text>
-        <Text style={styles.emptyTitle}>아직 목표가 없어요</Text>
+        <Text style={styles.emptyTitle}>No goals yet</Text>
         <Text style={styles.emptyDescription}>
-          1년에 100번, 꾸준히 달성할{'\n'}첫 번째 목표를 만들어 보세요!
+          Create your first goal{'\n'}and start raising your bee!
         </Text>
         <TouchableOpacity style={styles.createButton} onPress={handleCreateGoal}>
-          <Text style={styles.createButtonText}>첫 목표 만들기</Text>
+          <Text style={styles.createButtonText}>Create First Goal</Text>
         </TouchableOpacity>
       </View>
     );
@@ -58,9 +61,12 @@ export default function HomeScreen() {
         )}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>진행 중인 목표</Text>
-            <Text style={styles.headerCount}>{goals.length}개</Text>
+          <View>
+            <BeeStatus status={beeStatus} />
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Active Goals</Text>
+              <Text style={styles.headerCount}>{goals.length}</Text>
+            </View>
           </View>
         }
       />

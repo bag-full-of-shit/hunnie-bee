@@ -13,7 +13,7 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>아이콘 선택</Text>
+      <Text style={styles.label}>Select Icon</Text>
       <View style={styles.grid}>
         {DEFAULT_EMOJIS.map((emoji) => (
           <TouchableOpacity

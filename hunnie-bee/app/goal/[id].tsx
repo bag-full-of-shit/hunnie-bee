@@ -35,7 +35,7 @@ export default function GoalDetailScreen() {
   if (!goal) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>목표를 찾을 수 없습니다</Text>
+        <Text style={styles.errorText}>Goal not found</Text>
       </View>
     );
   }
@@ -49,12 +49,12 @@ export default function GoalDetailScreen() {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setJustRecorded(true);
 
-      // 잠시 후 버튼 상태 복원
+      // Reset button state after a moment
       setTimeout(() => {
         setJustRecorded(false);
       }, 2000);
     } catch (error) {
-      Alert.alert('오류', '기록에 실패했습니다');
+      Alert.alert('Error', 'Failed to record');
     } finally {
       setIsRecording(false);
     }
@@ -62,12 +62,12 @@ export default function GoalDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      '목표 삭제',
-      `"${goal.title}" 목표와 모든 기록이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`,
+      'Delete Goal',
+      `"${goal.title}" and all its records will be deleted. This action cannot be undone.`,
       [
-        { text: '취소', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: '삭제',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             await deleteGoal(goal.id);
@@ -95,23 +95,23 @@ export default function GoalDetailScreen() {
 
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>남은 기간</Text>
+            <Text style={styles.infoLabel}>Days Remaining</Text>
             <Text style={styles.infoValue}>
-              {goal.remainingDays > 0 ? `${goal.remainingDays}일` : '종료됨'}
+              {goal.remainingDays > 0 ? `${goal.remainingDays} days` : 'Ended'}
             </Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>시작일</Text>
+            <Text style={styles.infoLabel}>Start Date</Text>
             <Text style={styles.infoValue}>{formatDate(goal.startDate)}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>종료일</Text>
+            <Text style={styles.infoLabel}>End Date</Text>
             <Text style={styles.infoValue}>{formatDate(goal.endDate)}</Text>
           </View>
         </View>
 
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.deleteText}>목표 삭제</Text>
+          <Text style={styles.deleteText}>Delete Goal</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -119,10 +119,10 @@ export default function GoalDetailScreen() {
         <Button
           title={
             justRecorded || hasRecordedToday
-              ? '오늘 기록 완료! ✓'
+              ? 'Done for today! ✓'
               : isCompleted
-              ? '목표 달성! 🎉'
-              : '오늘 했어요! 🐝'
+              ? 'Goal achieved! 🎉'
+              : 'Done today! 🐝'
           }
           onPress={handleRecord}
           size="large"

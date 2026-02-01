@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { GoalWithProgress } from '../../types';
 import { Colors, Spacing, FontSize } from '../../constants';
+import { BeeProgressBar } from '../ui/BeeProgressBar';
 
 interface GoalCardProps {
   goal: GoalWithProgress;
@@ -9,8 +10,6 @@ interface GoalCardProps {
 }
 
 export const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress }) => {
-  const progressWidth = `${Math.min(goal.progressPercent, 100)}%`;
-
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
@@ -21,17 +20,18 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress }) => {
         <Text style={styles.arrow}>›</Text>
       </View>
 
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: progressWidth }]} />
+      <View style={styles.progressSection}>
+        <BeeProgressBar progress={goal.progressPercent} height={28} />
+        <View style={styles.progressInfo}>
+          <Text style={styles.progressText}>
+            {goal.currentCount}/{goal.targetCount}
+          </Text>
+          <Text style={styles.percentText}>{goal.progressPercent}%</Text>
         </View>
-        <Text style={styles.progressText}>
-          {goal.currentCount}/{goal.targetCount}
-        </Text>
       </View>
 
       <Text style={styles.remaining}>
-        {goal.remainingDays > 0 ? `${goal.remainingDays}일 남음` : '기간 종료'}
+        {goal.remainingDays > 0 ? `${goal.remainingDays} days left` : 'Ended'}
       </Text>
     </TouchableOpacity>
   );
@@ -74,30 +74,23 @@ const styles = StyleSheet.create({
     fontSize: FontSize.h2,
     color: Colors.gray400,
   },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  progressSection: {
     marginBottom: Spacing.sm,
   },
-  progressBar: {
-    flex: 1,
-    height: 8,
-    backgroundColor: Colors.gray200,
-    borderRadius: 4,
-    marginRight: Spacing.md,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.honey400,
-    borderRadius: 4,
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
   },
   progressText: {
     fontSize: FontSize.bodyS,
     fontWeight: '600',
     color: Colors.honey700,
-    minWidth: 60,
-    textAlign: 'right',
+  },
+  percentText: {
+    fontSize: FontSize.bodyS,
+    color: Colors.gray500,
   },
   remaining: {
     fontSize: FontSize.caption,

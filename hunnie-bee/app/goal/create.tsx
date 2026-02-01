@@ -13,6 +13,9 @@ import { useRouter } from 'expo-router';
 import { useGoalStore } from '../../stores/goalStore';
 import { Input, EmojiPicker, Button } from '../../components';
 import { Colors, Spacing, FontSize, DEFAULTS } from '../../constants';
+import { getEndOfYear, getOneYearLater } from '../../utils';
+
+type DurationType = 'endOfYear' | 'oneYear';
 
 export default function CreateGoalScreen() {
   const router = useRouter();
@@ -22,18 +25,19 @@ export default function CreateGoalScreen() {
   const [title, setTitle] = useState('');
   const [emoji, setEmoji] = useState(DEFAULTS.emoji);
   const [targetCount, setTargetCount] = useState(String(DEFAULTS.targetCount));
+  const [durationType, setDurationType] = useState<DurationType>('oneYear');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleCreate = async () => {
     if (!title.trim()) {
-      setError('목표 제목을 입력해 주세요');
+      setError('Please enter a goal title');
       return;
     }
 
     const count = parseInt(targetCount, 10);
     if (isNaN(count) || count < 1 || count > 365) {
-      setError('목표 횟수는 1~365 사이여야 합니다');
+      setError('Target count must be between 1 and 365');
       return;
     }
 
@@ -41,14 +45,16 @@ export default function CreateGoalScreen() {
     setError('');
 
     try {
+      const endDate = durationType === 'endOfYear' ? getEndOfYear() : getOneYearLater();
       await createGoal({
         title: title.trim(),
         emoji,
         targetCount: count,
+        endDate,
       });
       router.back();
     } catch (e) {
-      setError('목표 생성에 실패했습니다');
+      setError('Failed to create goal');
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +62,14 @@ export default function CreateGoalScreen() {
 
   const handleClose = () => {
     router.back();
+  };
+
+  const getDurationLabel = () => {
+    if (durationType === 'endOfYear') {
+      const year = new Date().getFullYear();
+      return `Until Dec 31, ${year}`;
+    }
+    return 'For 1 year';
   };
 
   return (
@@ -67,7 +81,7 @@ export default function CreateGoalScreen() {
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <Text style={styles.closeIcon}>✕</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>새 목표 만들기</Text>
+        <Text style={styles.headerTitle}>New Goal</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -79,33 +93,71 @@ export default function CreateGoalScreen() {
         <EmojiPicker selectedEmoji={emoji} onSelect={setEmoji} />
 
         <Input
-          label="목표 제목"
-          placeholder="예: 책 읽기"
+          label="Goal Title"
+          placeholder="e.g., Read books"
           value={title}
           onChangeText={setTitle}
           maxLength={50}
         />
 
         <Input
-          label="목표 횟수"
+          label="Target Count"
           placeholder="100"
           value={targetCount}
           onChangeText={setTargetCount}
           keyboardType="number-pad"
-          helperText="1년 동안 이 횟수를 달성하면 성공!"
+          helperText="Complete this many times to achieve your goal!"
         />
+
+        <View style={styles.durationSection}>
+          <Text style={styles.durationLabel}>Duration</Text>
+          <View style={styles.durationOptions}>
+            <TouchableOpacity
+              style={[
+                styles.durationOption,
+                durationType === 'endOfYear' && styles.durationOptionActive,
+              ]}
+              onPress={() => setDurationType('endOfYear')}
+            >
+              <Text
+                style={[
+                  styles.durationOptionText,
+                  durationType === 'endOfYear' && styles.durationOptionTextActive,
+                ]}
+              >
+                Until End of Year
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.durationOption,
+                durationType === 'oneYear' && styles.durationOptionActive,
+              ]}
+              onPress={() => setDurationType('oneYear')}
+            >
+              <Text
+                style={[
+                  styles.durationOptionText,
+                  durationType === 'oneYear' && styles.durationOptionTextActive,
+                ]}
+              >
+                For 1 Year
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <View style={styles.preview}>
-          <Text style={styles.previewTitle}>미리보기</Text>
+          <Text style={styles.previewTitle}>Preview</Text>
           <View style={styles.previewCard}>
             <Text style={styles.previewEmoji}>{emoji}</Text>
             <Text style={styles.previewGoalTitle}>
-              {title || '목표 제목'}
+              {title || 'Goal Title'}
             </Text>
             <Text style={styles.previewDescription}>
-              1년에 {targetCount || '100'}번 하기
+              {targetCount || '100'} times · {getDurationLabel()}
             </Text>
           </View>
         </View>
@@ -113,7 +165,7 @@ export default function CreateGoalScreen() {
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.base) }]}>
         <Button
-          title="목표 만들기 🐝"
+          title="Create Goal 🐝"
           onPress={handleCreate}
           size="large"
           loading={isLoading}
@@ -163,6 +215,41 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: Spacing.base,
+  },
+  durationSection: {
+    marginBottom: Spacing.base,
+  },
+  durationLabel: {
+    fontSize: FontSize.bodyS,
+    fontWeight: '500',
+    color: Colors.gray700,
+    marginBottom: Spacing.sm,
+  },
+  durationOptions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  durationOption: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.gray300,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+  },
+  durationOptionActive: {
+    borderColor: Colors.honey500,
+    backgroundColor: Colors.honey50,
+  },
+  durationOptionText: {
+    fontSize: FontSize.body,
+    color: Colors.gray600,
+    fontWeight: '500',
+  },
+  durationOptionTextActive: {
+    color: Colors.honey700,
   },
   error: {
     color: Colors.error,

@@ -74,7 +74,7 @@ export class LocalRepository implements IGoalRepository {
       const filteredGoals = goals.filter((g) => g.id !== id);
       await AsyncStorage.setItem(STORAGE_KEYS.GOALS, JSON.stringify(filteredGoals));
 
-      // 관련 기록도 삭제
+      // Also delete related records
       const records = await this.getAllRecords();
       const filteredRecords = records.filter((r) => r.goalId !== id);
       await AsyncStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(filteredRecords));

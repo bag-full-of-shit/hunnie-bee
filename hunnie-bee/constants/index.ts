@@ -1,4 +1,4 @@
-// 색상 팔레트
+// Color palette
 export const Colors = {
   // Honey Palette
   honey50: '#FFFBEB',
@@ -35,7 +35,7 @@ export const Colors = {
   black: '#000000',
 } as const;
 
-// 간격 시스템
+// Spacing system
 export const Spacing = {
   xs: 4,
   sm: 8,
@@ -48,7 +48,7 @@ export const Spacing = {
   '4xl': 48,
 } as const;
 
-// 폰트 크기
+// Font sizes
 export const FontSize = {
   display: 36,
   h1: 28,
@@ -60,7 +60,7 @@ export const FontSize = {
   caption: 12,
 } as const;
 
-// 기본 이모지 목록
+// Default emoji list
 export const DEFAULT_EMOJIS = [
   '📚', '🏃', '🎸', '✍️', '🧘', '💪',
   '🎨', '💻', '🌱', '☕', '📝', '🎵',
@@ -68,7 +68,7 @@ export const DEFAULT_EMOJIS = [
   '📖', '🎯',
 ] as const;
 
-// 기본값
+// Default values
 export const DEFAULTS = {
   targetCount: 100,
   emoji: '🐝',

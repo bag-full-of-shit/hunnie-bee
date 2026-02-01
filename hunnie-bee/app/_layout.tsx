@@ -25,7 +25,7 @@ export default function RootLayout() {
       <Stack.Screen
         name="goal/[id]"
         options={{
-          title: '목표 상세',
+          title: 'Goal Details',
           headerBackTitleVisible: false,
         }}
       />

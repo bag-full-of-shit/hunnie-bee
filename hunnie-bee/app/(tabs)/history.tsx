@@ -14,7 +14,7 @@ export default function HistoryScreen() {
     return goals.find((g) => g.id === goalId);
   };
 
-  // 일자별 그룹핑
+  // Group by date
   const recordsByDate = useMemo(() => {
     const grouped: Record<string, typeof records> = {};
 
@@ -36,7 +36,7 @@ export default function HistoryScreen() {
       }));
   }, [records]);
 
-  // 습관별 그룹핑
+  // Group by goal
   const recordsByGoal = useMemo(() => {
     const grouped: Record<string, typeof records> = {};
 
@@ -53,7 +53,7 @@ export default function HistoryScreen() {
         return {
           goalId,
           goal,
-          title: goal ? `${goal.emoji} ${goal.title}` : '삭제된 목표',
+          title: goal ? `${goal.emoji} ${goal.title}` : 'Deleted Goal',
           data: items.sort(
             (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
           ),
@@ -66,9 +66,9 @@ export default function HistoryScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyEmoji}>📊</Text>
-        <Text style={styles.emptyTitle}>아직 기록이 없어요</Text>
+        <Text style={styles.emptyTitle}>No records yet</Text>
         <Text style={styles.emptyDescription}>
-          목표를 실천하면{'\n'}여기에 기록이 쌓여요!
+          Complete your goals{'\n'}and your records will appear here!
         </Text>
       </View>
     );
@@ -77,8 +77,8 @@ export default function HistoryScreen() {
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>실천 기록</Text>
-        <Text style={styles.headerCount}>총 {records.length}회</Text>
+        <Text style={styles.headerTitle}>Activity Log</Text>
+        <Text style={styles.headerCount}>{records.length} total</Text>
       </View>
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -86,7 +86,7 @@ export default function HistoryScreen() {
           onPress={() => setViewMode('byDate')}
         >
           <Text style={[styles.tabText, viewMode === 'byDate' && styles.activeTabText]}>
-            일자별
+            By Date
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -94,7 +94,7 @@ export default function HistoryScreen() {
           onPress={() => setViewMode('byGoal')}
         >
           <Text style={[styles.tabText, viewMode === 'byGoal' && styles.activeTabText]}>
-            습관별
+            By Goal
           </Text>
         </TouchableOpacity>
       </View>
@@ -130,7 +130,7 @@ export default function HistoryScreen() {
   const renderSectionHeader = ({ section }: { section: { title: string; data: typeof records } }) => (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{section.title}</Text>
-      <Text style={styles.sectionCount}>{section.data.length}회</Text>
+      <Text style={styles.sectionCount}>{section.data.length}x</Text>
     </View>
   );
 

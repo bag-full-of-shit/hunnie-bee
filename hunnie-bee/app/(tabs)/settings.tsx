@@ -9,17 +9,17 @@ export default function SettingsScreen() {
 
   const handleClearData = () => {
     Alert.alert(
-      '데이터 초기화',
-      '모든 목표와 기록이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+      'Reset Data',
+      'All goals and records will be deleted. This action cannot be undone.',
       [
-        { text: '취소', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: '삭제',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.clear();
             await loadData();
-            Alert.alert('완료', '모든 데이터가 삭제되었습니다.');
+            Alert.alert('Done', 'All data has been deleted.');
           },
         },
       ]
@@ -29,28 +29,28 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>앱 정보</Text>
+        <Text style={styles.sectionTitle}>App Info</Text>
         <View style={styles.item}>
-          <Text style={styles.itemLabel}>버전</Text>
+          <Text style={styles.itemLabel}>Version</Text>
           <Text style={styles.itemValue}>1.0.0</Text>
         </View>
         <View style={styles.item}>
-          <Text style={styles.itemLabel}>개발자</Text>
+          <Text style={styles.itemLabel}>Developer</Text>
           <Text style={styles.itemValue}>Hunnie-Bee Team</Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>데이터</Text>
+        <Text style={styles.sectionTitle}>Data</Text>
         <TouchableOpacity style={styles.dangerItem} onPress={handleClearData}>
-          <Text style={styles.dangerText}>모든 데이터 삭제</Text>
+          <Text style={styles.dangerText}>Delete All Data</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.footer}>
         <Text style={styles.footerEmoji}>🐝</Text>
         <Text style={styles.footerText}>
-          1년에 100번, 꾸준히 모아가는 습관
+          Build habits, one step at a time
         </Text>
       </View>
     </View>

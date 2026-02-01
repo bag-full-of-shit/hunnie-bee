@@ -1,4 +1,4 @@
-// Goal: 사용자가 설정한 연간 목표
+// Goal: User's annual goal
 export interface Goal {
   id: string;
   title: string;
@@ -10,7 +10,7 @@ export interface Goal {
   updatedAt: string;
 }
 
-// Record: 목표에 대한 개별 실천 기록
+// Record: Individual completion record for a goal
 export interface GoalRecord {
   id: string;
   goalId: string;
@@ -18,14 +18,14 @@ export interface GoalRecord {
   note?: string;
 }
 
-// 앱 전체 상태
+// App state
 export interface AppState {
   goals: Goal[];
   records: GoalRecord[];
   onboardingCompleted: boolean;
 }
 
-// 목표 생성 입력
+// Goal creation input
 export interface CreateGoalInput {
   title: string;
   emoji?: string;
@@ -34,14 +34,14 @@ export interface CreateGoalInput {
   endDate?: string;
 }
 
-// 목표 업데이트 입력
+// Goal update input
 export interface UpdateGoalInput {
   title?: string;
   emoji?: string;
   targetCount?: number;
 }
 
-// 목표와 진행 상황을 포함한 뷰 모델
+// View model with goal and progress
 export interface GoalWithProgress extends Goal {
   currentCount: number;
   progressPercent: number;
