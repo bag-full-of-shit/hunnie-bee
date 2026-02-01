@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useGoalStore } from '../../stores/goalStore';
 import { Input, EmojiPicker, Button } from '../../components';
@@ -15,6 +16,7 @@ import { Colors, Spacing, FontSize, DEFAULTS } from '../../constants';
 
 export default function CreateGoalScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const createGoal = useGoalStore((state) => state.createGoal);
 
   const [title, setTitle] = useState('');
@@ -109,7 +111,7 @@ export default function CreateGoalScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.base) }]}>
         <Button
           title="목표 만들기 🐝"
           onPress={handleCreate}

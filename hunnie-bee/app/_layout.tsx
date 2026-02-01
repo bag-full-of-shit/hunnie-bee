@@ -13,19 +13,20 @@ export default function RootLayout() {
     <Stack>
       <Stack.Screen
         name="(tabs)"
-        options={{ headerShown: false }}
+        options={{ headerShown: false, title: '' }}
       />
       <Stack.Screen
         name="goal/create"
         options={{
           presentation: 'modal',
-          title: '새 목표 만들기',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="goal/[id]"
         options={{
           title: '목표 상세',
+          headerBackTitleVisible: false,
         }}
       />
     </Stack>

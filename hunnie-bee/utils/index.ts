@@ -1,9 +1,9 @@
-import { v4 as uuidv4 } from 'uuid';
+import * as Crypto from 'expo-crypto';
 import { Goal, GoalRecord, GoalWithProgress } from '../types';
 import { DEFAULTS } from '../constants';
 
 // UUID 생성
-export const generateId = (): string => uuidv4();
+export const generateId = (): string => Crypto.randomUUID();
 
 // 현재 시간을 ISO 문자열로
 export const now = (): string => new Date().toISOString();

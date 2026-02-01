@@ -12,12 +12,12 @@ import * as Haptics from 'expo-haptics';
 import { useGoalStore } from '../../stores/goalStore';
 import { HoneycombGrid, ProgressDisplay, Button } from '../../components';
 import { Colors, Spacing, FontSize } from '../../constants';
-import { formatDate } from '../../utils';
+import { formatDate, isToday } from '../../utils';
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { getGoalWithProgress, addRecord, deleteGoal, loadData } = useGoalStore();
+  const { getGoalWithProgress, addRecord, deleteGoal, loadData, records } = useGoalStore();
   const [isRecording, setIsRecording] = useState(false);
   const [justRecorded, setJustRecorded] = useState(false);
 
@@ -28,6 +28,9 @@ export default function GoalDetailScreen() {
   );
 
   const goal = getGoalWithProgress(id);
+  const hasRecordedToday = records.some(
+    (r) => r.goalId === id && isToday(r.recordedAt)
+  );
 
   if (!goal) {
     return (
@@ -38,7 +41,7 @@ export default function GoalDetailScreen() {
   }
 
   const handleRecord = async () => {
-    if (isRecording || justRecorded) return;
+    if (isRecording || justRecorded || hasRecordedToday) return;
 
     setIsRecording(true);
     try {
@@ -115,8 +118,8 @@ export default function GoalDetailScreen() {
       <View style={styles.footer}>
         <Button
           title={
-            justRecorded
-              ? '기록 완료! ✓'
+            justRecorded || hasRecordedToday
+              ? '오늘 기록 완료! ✓'
               : isCompleted
               ? '목표 달성! 🎉'
               : '오늘 했어요! 🐝'
@@ -124,10 +127,10 @@ export default function GoalDetailScreen() {
           onPress={handleRecord}
           size="large"
           loading={isRecording}
-          disabled={isCompleted || justRecorded}
+          disabled={isCompleted || justRecorded || hasRecordedToday}
           style={[
             styles.recordButton,
-            justRecorded && styles.recordedButton,
+            (justRecorded || hasRecordedToday) && styles.recordedButton,
           ]}
         />
       </View>

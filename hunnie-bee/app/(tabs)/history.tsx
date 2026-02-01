@@ -1,21 +1,68 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, SectionList, FlatList, TouchableOpacity } from 'react-native';
 import { useGoalStore } from '../../stores/goalStore';
 import { Colors, Spacing, FontSize } from '../../constants';
 import { formatDate } from '../../utils';
 
+type ViewMode = 'byDate' | 'byGoal';
+
 export default function HistoryScreen() {
   const { records, goals } = useGoalStore();
-
-  const sortedRecords = [...records].sort(
-    (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>('byDate');
 
   const getGoalInfo = (goalId: string) => {
     return goals.find((g) => g.id === goalId);
   };
 
-  if (sortedRecords.length === 0) {
+  // 일자별 그룹핑
+  const recordsByDate = useMemo(() => {
+    const grouped: Record<string, typeof records> = {};
+
+    records.forEach((record) => {
+      const dateKey = formatDate(record.recordedAt);
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(record);
+    });
+
+    return Object.entries(grouped)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([date, items]) => ({
+        title: date,
+        data: items.sort(
+          (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+        ),
+      }));
+  }, [records]);
+
+  // 습관별 그룹핑
+  const recordsByGoal = useMemo(() => {
+    const grouped: Record<string, typeof records> = {};
+
+    records.forEach((record) => {
+      if (!grouped[record.goalId]) {
+        grouped[record.goalId] = [];
+      }
+      grouped[record.goalId].push(record);
+    });
+
+    return Object.entries(grouped)
+      .map(([goalId, items]) => {
+        const goal = getGoalInfo(goalId);
+        return {
+          goalId,
+          goal,
+          title: goal ? `${goal.emoji} ${goal.title}` : '삭제된 목표',
+          data: items.sort(
+            (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+          ),
+        };
+      })
+      .sort((a, b) => b.data.length - a.data.length);
+  }, [records, goals]);
+
+  if (records.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyEmoji}>📊</Text>
@@ -27,35 +74,76 @@ export default function HistoryScreen() {
     );
   }
 
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>실천 기록</Text>
+        <Text style={styles.headerCount}>총 {records.length}회</Text>
+      </View>
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, viewMode === 'byDate' && styles.activeTab]}
+          onPress={() => setViewMode('byDate')}
+        >
+          <Text style={[styles.tabText, viewMode === 'byDate' && styles.activeTabText]}>
+            일자별
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, viewMode === 'byGoal' && styles.activeTab]}
+          onPress={() => setViewMode('byGoal')}
+        >
+          <Text style={[styles.tabText, viewMode === 'byGoal' && styles.activeTabText]}>
+            습관별
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderDateItem = ({ item }: { item: typeof records[0] }) => {
+    const goal = getGoalInfo(item.goalId);
+    if (!goal) return null;
+
+    return (
+      <View style={styles.recordItem}>
+        <Text style={styles.emoji}>{goal.emoji}</Text>
+        <View style={styles.recordContent}>
+          <Text style={styles.recordTitle}>{goal.title}</Text>
+        </View>
+        <Text style={styles.checkmark}>✓</Text>
+      </View>
+    );
+  };
+
+  const renderGoalItem = ({ item }: { item: typeof records[0] }) => {
+    return (
+      <View style={styles.recordItem}>
+        <View style={styles.recordContent}>
+          <Text style={styles.recordDate}>{formatDate(item.recordedAt)}</Text>
+        </View>
+        <Text style={styles.checkmark}>✓</Text>
+      </View>
+    );
+  };
+
+  const renderSectionHeader = ({ section }: { section: { title: string; data: typeof records } }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+      <Text style={styles.sectionCount}>{section.data.length}회</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={sortedRecords}
+      <SectionList
+        sections={viewMode === 'byDate' ? recordsByDate : recordsByGoal}
         keyExtractor={(item) => item.id}
+        renderItem={viewMode === 'byDate' ? renderDateItem : renderGoalItem}
+        renderSectionHeader={renderSectionHeader}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => {
-          const goal = getGoalInfo(item.goalId);
-          if (!goal) return null;
-
-          return (
-            <View style={styles.recordItem}>
-              <Text style={styles.emoji}>{goal.emoji}</Text>
-              <View style={styles.recordContent}>
-                <Text style={styles.recordTitle}>{goal.title}</Text>
-                <Text style={styles.recordDate}>
-                  {formatDate(item.recordedAt)}
-                </Text>
-              </View>
-              <Text style={styles.checkmark}>✓</Text>
-            </View>
-          );
-        }}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>실천 기록</Text>
-            <Text style={styles.headerCount}>총 {records.length}회</Text>
-          </View>
-        }
+        stickySectionHeadersEnabled={false}
       />
     </View>
   );
@@ -69,11 +157,14 @@ const styles = StyleSheet.create({
   listContent: {
     padding: Spacing.base,
   },
+  headerContainer: {
+    marginBottom: Spacing.base,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.md,
   },
   headerTitle: {
     fontSize: FontSize.h3,
@@ -84,6 +175,45 @@ const styles = StyleSheet.create({
     fontSize: FontSize.body,
     color: Colors.honey600,
     fontWeight: '500',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: Colors.gray200,
+    borderRadius: 8,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  activeTab: {
+    backgroundColor: Colors.white,
+  },
+  tabText: {
+    fontSize: FontSize.body,
+    color: Colors.gray500,
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: Colors.gray700,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  sectionTitle: {
+    fontSize: FontSize.body,
+    fontWeight: '600',
+    color: Colors.gray700,
+  },
+  sectionCount: {
+    fontSize: FontSize.caption,
+    color: Colors.gray500,
   },
   recordItem: {
     flexDirection: 'row',
@@ -106,9 +236,8 @@ const styles = StyleSheet.create({
     color: Colors.gray700,
   },
   recordDate: {
-    fontSize: FontSize.caption,
-    color: Colors.gray500,
-    marginTop: 2,
+    fontSize: FontSize.body,
+    color: Colors.gray600,
   },
   checkmark: {
     fontSize: 18,
