@@ -1,41 +1,47 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { BeeStatus as BeeStatusType } from '../../utils';
+import { BeeStatusInfo, BeeMood } from '../../types';
 import { Colors, Spacing, FontSize } from '../../constants';
 
 interface BeeStatusProps {
-  status: BeeStatusType;
+  beeStatus: BeeStatusInfo;
+  diligenceScore: number;
 }
 
-const moodColors: Record<BeeStatusType['mood'], string> = {
-  thriving: Colors.honey500,
-  happy: Colors.honey400,
-  normal: Colors.gray500,
-  worried: Colors.warning,
-  sad: Colors.error,
+const moodColors: Record<BeeMood, string> = {
+  happy: Colors.honey500,
+  content: Colors.honey400,
+  grumpy: Colors.gray500,
+  upset: Colors.error,
 };
 
-const moodBackgrounds: Record<BeeStatusType['mood'], string> = {
-  thriving: Colors.honey100,
-  happy: Colors.honey50,
-  normal: Colors.gray100,
-  worried: '#FEF3C7',
-  sad: '#FEE2E2',
+const moodBackgrounds: Record<BeeMood, string> = {
+  happy: Colors.honey100,
+  content: Colors.honey50,
+  grumpy: Colors.gray100,
+  upset: '#FEE2E2',
 };
 
-export const BeeStatus: React.FC<BeeStatusProps> = ({ status }) => {
-  const bgColor = moodBackgrounds[status.mood];
-  const textColor = moodColors[status.mood];
+const getDiligenceColor = (score: number): string => {
+  if (score >= 5) return Colors.honey500;
+  if (score >= -5) return Colors.gray500;
+  return Colors.error;
+};
+
+export const BeeStatus: React.FC<BeeStatusProps> = ({ beeStatus, diligenceScore }) => {
+  const bgColor = moodBackgrounds[beeStatus.mood];
+  const textColor = moodColors[beeStatus.mood];
+  const scoreColor = getDiligenceColor(diligenceScore);
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <Text style={styles.emoji}>{status.emoji}</Text>
+      <Text style={styles.emoji}>{beeStatus.emoji}</Text>
       <View style={styles.content}>
-        <Text style={[styles.message, { color: textColor }]}>{status.message}</Text>
+        <Text style={[styles.message, { color: textColor }]}>{beeStatus.message}</Text>
         <View style={styles.scoreContainer}>
-          <Text style={styles.scoreLabel}>Diligence Score: </Text>
-          <Text style={[styles.scoreValue, { color: textColor }]}>
-            {status.score > 0 ? '+' : ''}{status.score}
+          <Text style={styles.scoreLabel}>Progress: </Text>
+          <Text style={[styles.scoreValue, { color: scoreColor }]}>
+            {diligenceScore > 0 ? '+' : ''}{diligenceScore}
           </Text>
         </View>
       </View>

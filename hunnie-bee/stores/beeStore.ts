@@ -32,6 +32,7 @@ interface BeeStore {
   makeExcuse: (excuse: string) => Promise<boolean>;
   earnHoney: (amount?: number) => Promise<void>;
   checkAndApplyDecay: () => Promise<void>;
+  renameBee: (name: string) => Promise<void>;
 
   // Selectors
   getBeeStatus: () => BeeStatusInfo;
@@ -197,6 +198,20 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
       ...bee,
       bond: Math.max(0, bee.bond - bondDecay),
       lastCheckedAt: now,
+    };
+
+    set({ bee: newState });
+    await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(newState));
+  },
+
+  renameBee: async (name: string) => {
+    const { bee } = get();
+    const trimmedName = name.trim().slice(0, 20); // Limit to 20 chars
+    if (!trimmedName) return;
+
+    const newState: BeeState = {
+      ...bee,
+      name: trimmedName,
     };
 
     set({ bee: newState });

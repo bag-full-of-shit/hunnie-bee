@@ -1,11 +1,34 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGoalStore } from '../../stores/goalStore';
+import { useBeeStore } from '../../stores/beeStore';
 import { Colors, Spacing, FontSize } from '../../constants';
 
 export default function SettingsScreen() {
   const loadData = useGoalStore((state) => state.loadData);
+  const { bee, loadBeeState, renameBee } = useBeeStore();
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      loadBeeState();
+    }, [loadBeeState])
+  );
+
+  const handleStartEdit = () => {
+    setNameInput(bee.name);
+    setEditingName(true);
+  };
+
+  const handleSaveName = async () => {
+    if (nameInput.trim()) {
+      await renameBee(nameInput);
+    }
+    setEditingName(false);
+  };
 
   const handleClearData = () => {
     Alert.alert(
@@ -28,6 +51,45 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Your Bee</Text>
+        {editingName ? (
+          <View style={styles.editNameContainer}>
+            <TextInput
+              style={styles.nameInput}
+              value={nameInput}
+              onChangeText={setNameInput}
+              placeholder="Enter name"
+              maxLength={20}
+              autoFocus
+              onBlur={handleSaveName}
+              onSubmitEditing={handleSaveName}
+            />
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveName}
+              accessibilityRole="button"
+              accessibilityLabel="Save bee name"
+            >
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={handleStartEdit}
+            accessibilityRole="button"
+            accessibilityLabel={`Bee name: ${bee.name}. Tap to edit.`}
+          >
+            <Text style={styles.itemLabel}>Name</Text>
+            <View style={styles.editableValue}>
+              <Text style={styles.itemValue}>{bee.name}</Text>
+              <Text style={styles.editHint}>Tap to edit</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>App Info</Text>
         <View style={styles.item}>
@@ -94,6 +156,39 @@ const styles = StyleSheet.create({
   itemValue: {
     fontSize: FontSize.body,
     color: Colors.gray500,
+  },
+  editNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.base,
+    gap: Spacing.sm,
+  },
+  nameInput: {
+    flex: 1,
+    fontSize: FontSize.body,
+    color: Colors.gray800,
+    backgroundColor: Colors.gray50,
+    padding: Spacing.sm,
+    borderRadius: 8,
+  },
+  saveButton: {
+    backgroundColor: Colors.honey500,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: Colors.white,
+    fontSize: FontSize.body,
+    fontWeight: '600',
+  },
+  editableValue: {
+    alignItems: 'flex-end',
+  },
+  editHint: {
+    fontSize: FontSize.caption,
+    color: Colors.honey500,
+    marginTop: 2,
   },
   dangerItem: {
     padding: Spacing.base,

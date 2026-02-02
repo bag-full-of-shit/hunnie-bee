@@ -113,6 +113,8 @@ export default function BeeScreen() {
         <TouchableOpacity
           onPress={() => setShowSpeechBubble(!showSpeechBubble)}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`${bee.name} the bee is ${beeStatus.mood}. Tap to hear what ${bee.name} has to say.`}
         >
           <Text style={styles.beeEmoji}>{beeStatus.emoji}</Text>
         </TouchableOpacity>
@@ -129,7 +131,11 @@ export default function BeeScreen() {
       </View>
 
       {/* Bond Bar */}
-      <View style={styles.bondContainer}>
+      <View
+        style={styles.bondContainer}
+        accessible={true}
+        accessibilityLabel={`Bond level: ${bee.bond} percent`}
+      >
         <View style={styles.bondHeader}>
           <Text style={styles.bondLabel}>Bond</Text>
           <Text style={[styles.bondValue, { color: moodColors[beeStatus.mood] }]}>
@@ -147,7 +153,11 @@ export default function BeeScreen() {
       </View>
 
       {/* Honey Count */}
-      <View style={styles.honeyContainer}>
+      <View
+        style={styles.honeyContainer}
+        accessible={true}
+        accessibilityLabel={`You have ${bee.honeyCount} honey`}
+      >
         <Text style={styles.honeyEmoji}>🍯</Text>
         <Text style={styles.honeyCount}>{bee.honeyCount}</Text>
         <Text style={styles.honeyLabel}>honey</Text>
@@ -161,6 +171,8 @@ export default function BeeScreen() {
             <TouchableOpacity
               style={styles.excuseButton}
               onPress={() => setShowExcuseInput(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Make an excuse to ${bee.name}. Your bee is upset and needs an explanation.`}
             >
               <Text style={styles.excuseButtonEmoji}>🙏</Text>
               <Text style={styles.excuseButtonText}>Make an excuse</Text>
@@ -177,6 +189,8 @@ export default function BeeScreen() {
                 onChangeText={setExcuseText}
                 multiline
                 maxLength={100}
+                accessibilityLabel="Write your excuse"
+                accessibilityHint="Tell your bee why you were busy"
               />
               <View style={styles.excuseActions}>
                 <TouchableOpacity
@@ -185,6 +199,8 @@ export default function BeeScreen() {
                     setShowExcuseInput(false);
                     setExcuseText('');
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel excuse"
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -192,6 +208,8 @@ export default function BeeScreen() {
                   style={[styles.submitButton, !excuseText.trim() && styles.submitButtonDisabled]}
                   onPress={handleExcuse}
                   disabled={!excuseText.trim()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send excuse. Costs 1 honey."
                 >
                   <Text style={styles.submitButtonText}>Send (🍯 1)</Text>
                 </TouchableOpacity>
@@ -209,6 +227,8 @@ export default function BeeScreen() {
             ]}
             onPress={handleFeed}
             disabled={bee.honeyCount <= 0}
+            accessibilityRole="button"
+            accessibilityLabel={`Give honey to ${bee.name}. Increases bond by 20 percent.${bee.honeyCount <= 0 ? ' Currently disabled, no honey available.' : ''}`}
           >
             <Text style={styles.actionEmoji}>🍯</Text>
             <Text style={styles.actionText}>Give Honey</Text>

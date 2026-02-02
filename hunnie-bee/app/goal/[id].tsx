@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,78 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CELEBRATION_EMOJIS = ['🍯', '🐝', '✨', '🎉', '💛'];
+const NUM_PARTICLES = 12;
 import * as Haptics from 'expo-haptics';
 import { useGoalStore } from '../../stores/goalStore';
 import { useBeeStore } from '../../stores/beeStore';
 import { HoneycombGrid, ProgressDisplay, Button } from '../../components';
 import { Colors, Spacing, FontSize } from '../../constants';
 import { formatDate, isToday } from '../../utils';
+
+// Celebration particle component
+const CelebrationParticle = ({ emoji, delay, startX }: { emoji: string; delay: number; startX: number }) => {
+  const translateY = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.5)).current;
+
+  useEffect(() => {
+    const xOffset = (Math.random() - 0.5) * 150;
+
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: -200 - Math.random() * 100,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: xOffset,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [delay, opacity, scale, translateX, translateY]);
+
+  return (
+    <Animated.Text
+      style={[
+        styles.particle,
+        {
+          left: startX,
+          opacity,
+          transform: [{ translateY }, { translateX }, { scale }],
+        },
+      ]}
+    >
+      {emoji}
+    </Animated.Text>
+  );
+};
 
 export default function GoalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +86,8 @@ export default function GoalDetailScreen() {
   const { earnHoney } = useBeeStore();
   const [isRecording, setIsRecording] = useState(false);
   const [justRecorded, setJustRecorded] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [particles, setParticles] = useState<Array<{ id: number; emoji: string; delay: number; startX: number }>>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -42,6 +108,23 @@ export default function GoalDetailScreen() {
     );
   }
 
+  const triggerCelebration = () => {
+    const newParticles = Array.from({ length: NUM_PARTICLES }, (_, i) => ({
+      id: Date.now() + i,
+      emoji: CELEBRATION_EMOJIS[Math.floor(Math.random() * CELEBRATION_EMOJIS.length)],
+      delay: i * 50,
+      startX: SCREEN_WIDTH / 2 - 15 + (Math.random() - 0.5) * 60,
+    }));
+    setParticles(newParticles);
+    setShowCelebration(true);
+
+    // Clean up particles after animation
+    setTimeout(() => {
+      setShowCelebration(false);
+      setParticles([]);
+    }, 2000);
+  };
+
   const handleRecord = async () => {
     if (isRecording || justRecorded || hasRecordedToday) return;
 
@@ -50,6 +133,7 @@ export default function GoalDetailScreen() {
       await addRecord(goal.id);
       await earnHoney(1); // Earn 1 honey for completing a goal
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      triggerCelebration();
       setJustRecorded(true);
 
       // Reset button state after a moment
@@ -91,10 +175,15 @@ export default function GoalDetailScreen() {
       >
         <ProgressDisplay goal={goal} />
 
-        <HoneycombGrid
-          totalCells={goal.targetCount}
-          filledCells={goal.currentCount}
-        />
+        <View
+          accessible={true}
+          accessibilityLabel={`Progress grid: ${goal.currentCount} of ${goal.targetCount} completed`}
+        >
+          <HoneycombGrid
+            totalCells={goal.targetCount}
+            filledCells={goal.currentCount}
+          />
+        </View>
 
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
@@ -113,7 +202,21 @@ export default function GoalDetailScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => router.push(`/goal/edit?id=${goal.id}`)}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${goal.title}`}
+        >
+          <Text style={styles.editText}>Edit Goal</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete ${goal.title}`}
+        >
           <Text style={styles.deleteText}>Delete Goal</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -137,6 +240,20 @@ export default function GoalDetailScreen() {
           ]}
         />
       </View>
+
+      {/* Celebration particles */}
+      {showCelebration && (
+        <View style={styles.celebrationContainer} pointerEvents="none">
+          {particles.map((particle) => (
+            <CelebrationParticle
+              key={particle.id}
+              emoji={particle.emoji}
+              delay={particle.delay}
+              startX={particle.startX}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -184,9 +301,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.gray700,
   },
-  deleteButton: {
+  editButton: {
     alignItems: 'center',
     marginTop: Spacing.xl,
+    padding: Spacing.base,
+    backgroundColor: Colors.gray100,
+    borderRadius: 8,
+  },
+  editText: {
+    fontSize: FontSize.body,
+    color: Colors.gray700,
+    fontWeight: '500',
+  },
+  deleteButton: {
+    alignItems: 'center',
+    marginTop: Spacing.sm,
     padding: Spacing.base,
   },
   deleteText: {
@@ -208,5 +337,16 @@ const styles = StyleSheet.create({
   },
   recordedButton: {
     backgroundColor: Colors.success,
+  },
+  celebrationContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 100,
+  },
+  particle: {
+    position: 'absolute',
+    bottom: 80,
+    fontSize: 28,
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { GoalWithProgress } from '../../types';
 import { Colors, Spacing, FontSize } from '../../constants';
 import { BeeProgressBar } from '../ui/BeeProgressBar';
@@ -10,8 +11,19 @@ interface GoalCardProps {
 }
 
 export const GoalCard: React.FC<GoalCardProps> = ({ goal, onPress }) => {
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={handlePress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${goal.title}, ${goal.currentCount} of ${goal.targetCount} completed, ${goal.progressPercent} percent, ${goal.remainingDays} days left`}
+    >
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.emoji}>{goal.emoji}</Text>

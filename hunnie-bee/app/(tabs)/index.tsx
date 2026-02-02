@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,19 +6,37 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useGoalStore } from '../../stores/goalStore';
+import { useBeeStore } from '../../stores/beeStore';
 import { GoalCard, BeeStatus } from '../../components';
 import { Colors, Spacing, FontSize } from '../../constants';
-import { getBeeStatus } from '../../utils';
+import { calculateDiligenceScore } from '../../utils';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { isLoading, getAllGoalsWithProgress } = useGoalStore();
+  const { isLoading, getAllGoalsWithProgress, loadData } = useGoalStore();
+  const { getBeeStatus, loadBeeState, checkAndApplyDecay } = useBeeStore();
   const goals = getAllGoalsWithProgress();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const beeStatus = useMemo(() => getBeeStatus(goals), [goals]);
+  useFocusEffect(
+    useCallback(() => {
+      loadBeeState();
+      checkAndApplyDecay();
+    }, [loadBeeState, checkAndApplyDecay])
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([loadData(), loadBeeState()]);
+    setRefreshing(false);
+  }, [loadData, loadBeeState]);
+
+  const beeStatus = getBeeStatus();
+  const diligenceScore = useMemo(() => calculateDiligenceScore(goals), [goals]);
 
   const handleGoalPress = (goalId: string) => {
     router.push(`/goal/${goalId}`);
@@ -44,7 +62,12 @@ export default function HomeScreen() {
         <Text style={styles.emptyDescription}>
           Create your first goal{'\n'}and start raising your bee!
         </Text>
-        <TouchableOpacity style={styles.createButton} onPress={handleCreateGoal}>
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={handleCreateGoal}
+          accessibilityRole="button"
+          accessibilityLabel="Create your first goal"
+        >
           <Text style={styles.createButtonText}>Create First Goal</Text>
         </TouchableOpacity>
       </View>
@@ -60,9 +83,17 @@ export default function HomeScreen() {
           <GoalCard goal={item} onPress={() => handleGoalPress(item.id)} />
         )}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors.honey500}
+            colors={[Colors.honey500]}
+          />
+        }
         ListHeaderComponent={
           <View>
-            <BeeStatus status={beeStatus} />
+            <BeeStatus beeStatus={beeStatus} diligenceScore={diligenceScore} />
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Active Goals</Text>
               <Text style={styles.headerCount}>{goals.length}</Text>
@@ -71,7 +102,12 @@ export default function HomeScreen() {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={handleCreateGoal}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleCreateGoal}
+        accessibilityRole="button"
+        accessibilityLabel="Add new goal"
+      >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
     </View>

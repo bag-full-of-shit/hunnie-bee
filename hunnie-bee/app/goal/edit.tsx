@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,29 +7,45 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useGoalStore } from '../../stores/goalStore';
 import { Input, EmojiPicker, Button } from '../../components';
-import { Colors, Spacing, FontSize, DEFAULTS } from '../../constants';
-import { getEndOfYear, getOneYearLater } from '../../utils';
+import { Colors, Spacing, FontSize } from '../../constants';
 
-type DurationType = 'endOfYear' | 'oneYear';
-
-export default function CreateGoalScreen() {
+export default function EditGoalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const createGoal = useGoalStore((state) => state.createGoal);
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { goals, updateGoal } = useGoalStore();
+
+  const goal = goals.find((g) => g.id === id);
 
   const [title, setTitle] = useState('');
-  const [emoji, setEmoji] = useState(DEFAULTS.emoji);
-  const [targetCount, setTargetCount] = useState(String(DEFAULTS.targetCount));
-  const [durationType, setDurationType] = useState<DurationType>('oneYear');
+  const [emoji, setEmoji] = useState('');
+  const [targetCount, setTargetCount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleCreate = async () => {
+  useEffect(() => {
+    if (goal) {
+      setTitle(goal.title);
+      setEmoji(goal.emoji);
+      setTargetCount(String(goal.targetCount));
+    }
+  }, [goal]);
+
+  if (!goal) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={Colors.honey500} />
+      </View>
+    );
+  }
+
+  const handleSave = async () => {
     if (!title.trim()) {
       setError('Please enter a goal title');
       return;
@@ -45,16 +61,14 @@ export default function CreateGoalScreen() {
     setError('');
 
     try {
-      const endDate = durationType === 'endOfYear' ? getEndOfYear() : getOneYearLater();
-      await createGoal({
+      await updateGoal(goal.id, {
         title: title.trim(),
         emoji,
         targetCount: count,
-        endDate,
       });
       router.back();
     } catch (e) {
-      setError('Failed to create goal');
+      setError('Failed to update goal');
     } finally {
       setIsLoading(false);
     }
@@ -64,13 +78,10 @@ export default function CreateGoalScreen() {
     router.back();
   };
 
-  const getDurationLabel = () => {
-    if (durationType === 'endOfYear') {
-      const year = new Date().getFullYear();
-      return `Until Dec 31, ${year}`;
-    }
-    return 'For 1 year';
-  };
+  const hasChanges =
+    title !== goal.title ||
+    emoji !== goal.emoji ||
+    targetCount !== String(goal.targetCount);
 
   return (
     <KeyboardAvoidingView
@@ -78,15 +89,10 @@ export default function CreateGoalScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={handleClose}
-          style={styles.closeButton}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-        >
+        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <Text style={styles.closeIcon}>✕</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Goal</Text>
+        <Text style={styles.headerTitle}>Edit Goal</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -114,48 +120,10 @@ export default function CreateGoalScreen() {
           helperText="Complete this many times to achieve your goal!"
         />
 
-        <View style={styles.durationSection}>
-          <Text style={styles.durationLabel}>Duration</Text>
-          <View style={styles.durationOptions}>
-            <TouchableOpacity
-              style={[
-                styles.durationOption,
-                durationType === 'endOfYear' && styles.durationOptionActive,
-              ]}
-              onPress={() => setDurationType('endOfYear')}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: durationType === 'endOfYear' }}
-              accessibilityLabel="Until end of year"
-            >
-              <Text
-                style={[
-                  styles.durationOptionText,
-                  durationType === 'endOfYear' && styles.durationOptionTextActive,
-                ]}
-              >
-                Until End of Year
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.durationOption,
-                durationType === 'oneYear' && styles.durationOptionActive,
-              ]}
-              onPress={() => setDurationType('oneYear')}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: durationType === 'oneYear' }}
-              accessibilityLabel="For 1 year from today"
-            >
-              <Text
-                style={[
-                  styles.durationOptionText,
-                  durationType === 'oneYear' && styles.durationOptionTextActive,
-                ]}
-              >
-                For 1 Year
-              </Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoText}>
+            Note: The start and end dates cannot be changed after creation.
+          </Text>
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -168,7 +136,7 @@ export default function CreateGoalScreen() {
               {title || 'Goal Title'}
             </Text>
             <Text style={styles.previewDescription}>
-              {targetCount || '100'} times · {getDurationLabel()}
+              {targetCount || '100'} times
             </Text>
           </View>
         </View>
@@ -176,11 +144,11 @@ export default function CreateGoalScreen() {
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.base) }]}>
         <Button
-          title="Create Goal 🐝"
-          onPress={handleCreate}
+          title="Save Changes"
+          onPress={handleSave}
           size="large"
           loading={isLoading}
-          disabled={!title.trim()}
+          disabled={!title.trim() || !hasChanges}
           style={styles.submitButton}
         />
       </View>
@@ -191,6 +159,12 @@ export default function CreateGoalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.gray50,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: Colors.gray50,
   },
   header: {
@@ -227,39 +201,14 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: Spacing.base,
   },
-  durationSection: {
+  infoBox: {
+    backgroundColor: Colors.honey50,
+    borderRadius: 8,
+    padding: Spacing.base,
     marginBottom: Spacing.base,
   },
-  durationLabel: {
+  infoText: {
     fontSize: FontSize.bodyS,
-    fontWeight: '500',
-    color: Colors.gray700,
-    marginBottom: Spacing.sm,
-  },
-  durationOptions: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  durationOption: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.base,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.gray300,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-  },
-  durationOptionActive: {
-    borderColor: Colors.honey500,
-    backgroundColor: Colors.honey50,
-  },
-  durationOptionText: {
-    fontSize: FontSize.body,
-    color: Colors.gray600,
-    fontWeight: '500',
-  },
-  durationOptionTextActive: {
     color: Colors.honey700,
   },
   error: {

@@ -80,10 +80,13 @@ export default function HistoryScreen() {
         <Text style={styles.headerTitle}>Activity Log</Text>
         <Text style={styles.headerCount}>{records.length} total</Text>
       </View>
-      <View style={styles.tabContainer}>
+      <View style={styles.tabContainer} accessibilityRole="tablist">
         <TouchableOpacity
           style={[styles.tab, viewMode === 'byDate' && styles.activeTab]}
           onPress={() => setViewMode('byDate')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: viewMode === 'byDate' }}
+          accessibilityLabel="View records by date"
         >
           <Text style={[styles.tabText, viewMode === 'byDate' && styles.activeTabText]}>
             By Date
@@ -92,6 +95,9 @@ export default function HistoryScreen() {
         <TouchableOpacity
           style={[styles.tab, viewMode === 'byGoal' && styles.activeTab]}
           onPress={() => setViewMode('byGoal')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: viewMode === 'byGoal' }}
+          accessibilityLabel="View records by goal"
         >
           <Text style={[styles.tabText, viewMode === 'byGoal' && styles.activeTabText]}>
             By Goal
