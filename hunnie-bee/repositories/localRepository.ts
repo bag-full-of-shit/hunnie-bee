@@ -1,15 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Goal, GoalRecord, CreateGoalInput, UpdateGoalInput } from '../types';
-import { IGoalRepository } from './types';
+import { Goal, GoalRecord, CreateGoalInput, UpdateGoalInput, BeeState } from '../types';
+import { IRepository } from './types';
 import { generateId, now, getOneYearLater } from '../utils';
 import { DEFAULTS } from '../constants';
 
 const STORAGE_KEYS = {
   GOALS: '@hunnie-bee/goals',
   RECORDS: '@hunnie-bee/records',
+  BEE_STATE: '@hunnie-bee/bee-state',
 } as const;
 
-export class LocalRepository implements IGoalRepository {
+export class LocalRepository implements IRepository {
   // Goals
   async getAllGoals(): Promise<Goal[]> {
     try {
@@ -130,5 +131,39 @@ export class LocalRepository implements IGoalRepository {
       console.error('Failed to delete record:', error);
       return false;
     }
+  }
+
+  // Bee State
+  async getBeeState(): Promise<BeeState | null> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.BEE_STATE);
+      if (!data) return null;
+
+      const beeState = JSON.parse(data) as BeeState;
+
+      // Migration: if old format (has fullness/affection), convert to new
+      if ('fullness' in beeState && !('bond' in beeState)) {
+        const oldState = beeState as any;
+        const migratedState: BeeState = {
+          name: oldState.name || 'Honey',
+          bond: Math.round((oldState.fullness + oldState.affection) / 2),
+          honeyCount: oldState.honeyCount || 3,
+          lastInteractionAt: oldState.lastInteractionAt || now(),
+          lastCheckedAt: oldState.lastCheckedAt || now(),
+        };
+        await this.saveBeeState(migratedState);
+        return migratedState;
+      }
+
+      return beeState;
+    } catch (error) {
+      console.error('Failed to get bee state:', error);
+      return null;
+    }
+  }
+
+  async saveBeeState(state: BeeState): Promise<BeeState> {
+    await AsyncStorage.setItem(STORAGE_KEYS.BEE_STATE, JSON.stringify(state));
+    return state;
   }
 }

@@ -50,6 +50,15 @@ export const Spacing = {
 
 // Font sizes
 export const FontSize = {
+  xxxl: 36,
+  xxl: 32,
+  xl: 28,
+  lg: 24,
+  md: 18,
+  base: 16,
+  sm: 14,
+  xs: 12,
+  // Legacy aliases
   display: 36,
   h1: 28,
   h2: 24,

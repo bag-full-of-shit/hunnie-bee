@@ -1,4 +1,4 @@
-import { Goal, GoalRecord, CreateGoalInput, UpdateGoalInput } from '../types';
+import { Goal, GoalRecord, CreateGoalInput, UpdateGoalInput, BeeState } from '../types';
 
 // Repository interface - can be replaced with Supabase etc. later
 export interface IGoalRepository {
@@ -15,3 +15,12 @@ export interface IGoalRepository {
   createRecord(goalId: string, note?: string): Promise<GoalRecord>;
   deleteRecord(id: string): Promise<boolean>;
 }
+
+// Bee state repository interface
+export interface IBeeRepository {
+  getBeeState(): Promise<BeeState | null>;
+  saveBeeState(state: BeeState): Promise<BeeState>;
+}
+
+// Combined repository interface for implementations
+export interface IRepository extends IGoalRepository, IBeeRepository {}

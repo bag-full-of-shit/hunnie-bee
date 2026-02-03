@@ -1,8 +1,6 @@
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BeeState, BeeStatusInfo } from '../types';
-
-const BEE_STORAGE_KEY = '@hunnie-bee/bee-state';
+import { repository } from '../repositories';
 
 // Constants for bee mechanics
 const BOND_DECAY_PER_DAY = 15;
@@ -89,30 +87,15 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
   loadBeeState: async () => {
     set({ isLoading: true });
     try {
-      const stored = await AsyncStorage.getItem(BEE_STORAGE_KEY);
-      if (stored) {
-        const beeState = JSON.parse(stored) as BeeState;
-        // Migration: if old format (has fullness/affection), convert to new
-        if ('fullness' in beeState && !('bond' in beeState)) {
-          const oldState = beeState as any;
-          const migratedState: BeeState = {
-            name: oldState.name || 'Honey',
-            bond: Math.round((oldState.fullness + oldState.affection) / 2),
-            honeyCount: oldState.honeyCount || 3,
-            lastInteractionAt: oldState.lastInteractionAt || new Date().toISOString(),
-            lastCheckedAt: oldState.lastCheckedAt || new Date().toISOString(),
-          };
-          set({ bee: migratedState });
-          await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(migratedState));
-        } else {
-          set({ bee: beeState });
-        }
+      const beeState = await repository.getBeeState();
+      if (beeState) {
+        set({ bee: beeState });
         // Apply decay after loading
         await get().checkAndApplyDecay();
       } else {
         // First time - save default state
         const defaultState = getDefaultBeeState();
-        await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(defaultState));
+        await repository.saveBeeState(defaultState);
         set({ bee: defaultState });
       }
     } catch (error) {
@@ -138,7 +121,7 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
     };
 
     set({ bee: newState });
-    await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(newState));
+    await repository.saveBeeState(newState);
     return true;
   },
 
@@ -165,7 +148,7 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
     };
 
     set({ bee: newState });
-    await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(newState));
+    await repository.saveBeeState(newState);
     return true;
   },
 
@@ -179,7 +162,7 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
     };
 
     set({ bee: newState });
-    await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(newState));
+    await repository.saveBeeState(newState);
   },
 
   checkAndApplyDecay: async () => {
@@ -201,7 +184,7 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
     };
 
     set({ bee: newState });
-    await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(newState));
+    await repository.saveBeeState(newState);
   },
 
   renameBee: async (name: string) => {
@@ -215,7 +198,7 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
     };
 
     set({ bee: newState });
-    await AsyncStorage.setItem(BEE_STORAGE_KEY, JSON.stringify(newState));
+    await repository.saveBeeState(newState);
   },
 
   getBeeStatus: (): BeeStatusInfo => {
