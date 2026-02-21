@@ -23,7 +23,7 @@ export default function CreateGoalScreen() {
   const createGoal = useGoalStore((state) => state.createGoal);
 
   const [title, setTitle] = useState('');
-  const [emoji, setEmoji] = useState(DEFAULTS.emoji);
+  const [emoji, setEmoji] = useState<string>(DEFAULTS.emoji);
   const [targetCount, setTargetCount] = useState(String(DEFAULTS.targetCount));
   const [durationType, setDurationType] = useState<DurationType>('oneYear');
   const [isLoading, setIsLoading] = useState(false);

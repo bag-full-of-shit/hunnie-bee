@@ -234,10 +234,10 @@ export default function GoalDetailScreen() {
           size="large"
           loading={isRecording}
           disabled={isCompleted || justRecorded || hasRecordedToday}
-          style={[
-            styles.recordButton,
-            (justRecorded || hasRecordedToday) && styles.recordedButton,
-          ]}
+          style={{
+            ...styles.recordButton,
+            ...((justRecorded || hasRecordedToday) ? styles.recordedButton : {}),
+          }}
         />
       </View>
 

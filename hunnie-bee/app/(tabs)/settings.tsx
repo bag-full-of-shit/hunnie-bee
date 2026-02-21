@@ -1,19 +1,16 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Linking } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGoalStore } from '../../stores/goalStore';
 import { useBeeStore } from '../../stores/beeStore';
-import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Spacing, FontSize } from '../../constants';
 
 export default function SettingsScreen() {
   const loadData = useGoalStore((state) => state.loadData);
   const { bee, loadBeeState, renameBee } = useBeeStore();
-  const { user, signOut } = useAuth();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -31,30 +28,6 @@ export default function SettingsScreen() {
       await renameBee(nameInput);
     }
     setEditingName(false);
-  };
-
-  const handleSignOut = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            setIsSigningOut(true);
-            try {
-              await signOut();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            } finally {
-              setIsSigningOut(false);
-            }
-          },
-        },
-      ]
-    );
   };
 
   const handleClearData = () => {
@@ -78,28 +51,6 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Account Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <View style={styles.item}>
-          <Text style={styles.itemLabel}>Email</Text>
-          <Text style={styles.itemValue} numberOfLines={1}>
-            {user?.email || 'Not signed in'}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.signOutItem}
-          onPress={handleSignOut}
-          disabled={isSigningOut}
-        >
-          {isSigningOut ? (
-            <ActivityIndicator size="small" color={Colors.error} />
-          ) : (
-            <Text style={styles.signOutText}>Sign Out</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
       {/* Bee Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your Bee</Text>
@@ -151,6 +102,25 @@ export default function SettingsScreen() {
           <Text style={styles.itemLabel}>Developer</Text>
           <Text style={styles.itemValue}>Hunnie-Bee Team</Text>
         </View>
+      </View>
+
+      {/* Legal Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Legal</Text>
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => Linking.openURL('https://bbangjooo.github.io/hunnie-bee/privacy-policy.html')}
+        >
+          <Text style={styles.itemLabel}>Privacy Policy</Text>
+          <Text style={styles.linkArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => Linking.openURL('https://bbangjooo.github.io/hunnie-bee/terms-of-service.html')}
+        >
+          <Text style={styles.itemLabel}>Terms of Service</Text>
+          <Text style={styles.linkArrow}>›</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Data Section */}
@@ -243,14 +213,9 @@ const styles = StyleSheet.create({
     color: Colors.honey500,
     marginTop: 2,
   },
-  signOutItem: {
-    padding: Spacing.base,
-    alignItems: 'center',
-  },
-  signOutText: {
-    fontSize: FontSize.body,
-    color: Colors.error,
-    fontWeight: '500',
+  linkArrow: {
+    fontSize: FontSize.h3,
+    color: Colors.gray400,
   },
   dangerItem: {
     padding: Spacing.base,

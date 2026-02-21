@@ -3,6 +3,7 @@
     "name": "Hunnie-Bee",
     "slug": "hunnie-bee",
     "version": "1.0.0",
+    "description": "Build habits steadily: complete your goals 100 times a year with your bee companion.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -31,13 +32,7 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
-      [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
-        }
-      ]
+      "expo-router"
     ]
   }
 }
