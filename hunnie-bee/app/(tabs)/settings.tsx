@@ -109,14 +109,14 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>Legal</Text>
         <TouchableOpacity
           style={styles.item}
-          onPress={() => Linking.openURL('https://bbangjooo.github.io/hunnie-bee/privacy-policy.html')}
+          onPress={() => Linking.openURL('https://bag-full-of-shit.github.io/hunnie-bee/privacy-policy.html')}
         >
           <Text style={styles.itemLabel}>Privacy Policy</Text>
           <Text style={styles.linkArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.item}
-          onPress={() => Linking.openURL('https://bbangjooo.github.io/hunnie-bee/terms-of-service.html')}
+          onPress={() => Linking.openURL('https://bag-full-of-shit.github.io/hunnie-bee/terms-of-service.html')}
         >
           <Text style={styles.itemLabel}>Terms of Service</Text>
           <Text style={styles.linkArrow}>›</Text>
