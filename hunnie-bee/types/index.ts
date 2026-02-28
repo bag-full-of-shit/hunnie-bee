@@ -54,8 +54,18 @@ export interface BeeState {
   name: string;
   bond: number; // 0-100, represents relationship/trust level
   honeyCount: number;
+  totalHoneyEarned: number; // Lifetime honey earned (for evolution system)
   lastInteractionAt: string; // ISO 8601
   lastCheckedAt: string; // ISO 8601 - for daily decay calculation
+}
+
+// Bee evolution level
+export interface BeeLevel {
+  level: number;
+  name: string;
+  emoji: string;
+  minHoney: number;
+  personality: string[];
 }
 
 // Bee mood status
@@ -66,4 +76,46 @@ export interface BeeStatusInfo {
   emoji: string;
   message: string;
   canChat: boolean; // true if bee is willing to communicate
+}
+
+// Insights types
+export interface WeeklyTrend {
+  weekLabel: string;
+  completionCount: number;
+}
+
+export interface DayOfWeekActivity {
+  day: number; // 0=Sun, 6=Sat
+  label: string;
+  count: number;
+}
+
+export interface GoalStreak {
+  goalId: string;
+  goalTitle: string;
+  goalEmoji: string;
+  currentStreak: number;
+  bestStreak: number;
+}
+
+export interface InsightsData {
+  weeklyTrends: WeeklyTrend[];
+  dayOfWeekActivity: DayOfWeekActivity[];
+  goalStreaks: GoalStreak[];
+  overallCompletionRate: number;
+  totalRecords: number;
+  activeGoalCount: number;
+}
+
+// Reminder types
+export interface GoalReminder {
+  goalId: string;
+  enabled: boolean;
+  hour: number;
+  minute: number;
+}
+
+export interface ReminderSettings {
+  globalEnabled: boolean;
+  reminders: GoalReminder[];
 }

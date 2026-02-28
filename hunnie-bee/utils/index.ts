@@ -88,6 +88,73 @@ export const isWithin24Hours = (isoString: string): boolean => {
   return diffMs <= 24 * 60 * 60 * 1000;
 };
 
+// Insights utility functions
+export const getWeekLabel = (date: Date): string => {
+  const startOfWeek = new Date(date);
+  const day = startOfWeek.getDay();
+  startOfWeek.setDate(startOfWeek.getDate() - day);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+  const startMonth = startOfWeek.toLocaleDateString('en', { month: 'short' });
+  const startDay = startOfWeek.getDate();
+  const endDay = endOfWeek.getDate();
+
+  return `${startMonth} ${startDay}-${endDay}`;
+};
+
+export const getWeekKey = (date: Date): string => {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+export const calculateStreaks = (
+  recordDates: string[]
+): { currentStreak: number; bestStreak: number } => {
+  if (recordDates.length === 0) return { currentStreak: 0, bestStreak: 0 };
+
+  const uniqueDays = [...new Set(
+    recordDates.map((d) => {
+      const date = new Date(d);
+      return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    })
+  )].sort();
+
+  const dayDates = uniqueDays.map((d) => {
+    const [y, m, day] = d.split('-').map(Number);
+    return new Date(y, m, day);
+  });
+
+  let bestStreak = 1;
+  let currentStreak = 1;
+
+  for (let i = 1; i < dayDates.length; i++) {
+    const diffMs = dayDates[i].getTime() - dayDates[i - 1].getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      currentStreak++;
+      bestStreak = Math.max(bestStreak, currentStreak);
+    } else {
+      currentStreak = 1;
+    }
+  }
+
+  // Check if current streak is still active (last record was today or yesterday)
+  const lastDate = dayDates[dayDates.length - 1];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffFromToday = Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffFromToday > 1) {
+    currentStreak = 0;
+  }
+
+  return { currentStreak, bestStreak };
+};
+
 // Bee mood types
 export type BeeMood = 'thriving' | 'happy' | 'normal' | 'worried' | 'sad';
 

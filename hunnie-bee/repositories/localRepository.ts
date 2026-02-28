@@ -139,23 +139,37 @@ export class LocalRepository implements IRepository {
       const data = await AsyncStorage.getItem(STORAGE_KEYS.BEE_STATE);
       if (!data) return null;
 
-      const beeState = JSON.parse(data) as BeeState;
+      const parsed = JSON.parse(data) as any;
 
       // Migration: if old format (has fullness/affection), convert to new
-      if ('fullness' in beeState && !('bond' in beeState)) {
-        const oldState = beeState as any;
+      if ('fullness' in parsed && !('bond' in parsed)) {
         const migratedState: BeeState = {
-          name: oldState.name || 'Honey',
-          bond: Math.round((oldState.fullness + oldState.affection) / 2),
-          honeyCount: oldState.honeyCount || 3,
-          lastInteractionAt: oldState.lastInteractionAt || now(),
-          lastCheckedAt: oldState.lastCheckedAt || now(),
+          name: parsed.name || 'Honey',
+          bond: Math.round((parsed.fullness + parsed.affection) / 2),
+          honeyCount: parsed.honeyCount || 3,
+          totalHoneyEarned: parsed.honeyCount || 0,
+          lastInteractionAt: parsed.lastInteractionAt || now(),
+          lastCheckedAt: parsed.lastCheckedAt || now(),
         };
         await this.saveBeeState(migratedState);
         return migratedState;
       }
 
-      return beeState;
+      // Migration: add totalHoneyEarned if missing
+      if (!('totalHoneyEarned' in parsed)) {
+        const migratedState: BeeState = {
+          name: parsed.name,
+          bond: parsed.bond,
+          honeyCount: parsed.honeyCount,
+          totalHoneyEarned: 0,
+          lastInteractionAt: parsed.lastInteractionAt,
+          lastCheckedAt: parsed.lastCheckedAt,
+        };
+        await this.saveBeeState(migratedState);
+        return migratedState;
+      }
+
+      return parsed as BeeState;
     } catch (error) {
       console.error('Failed to get bee state:', error);
       return null;
