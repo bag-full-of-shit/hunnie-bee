@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { BeeState, BeeStatusInfo } from '../types';
+import { BeeState, BeeStatusInfo, BeeLevel } from '../types';
 import { repository } from '../repositories';
+import { getLevelForHoney, getLevelProgress as calcLevelProgress } from '../constants/beeEvolution';
 
 // Constants for bee mechanics
 const BOND_DECAY_PER_DAY = 15;
@@ -15,6 +16,7 @@ const getDefaultBeeState = (): BeeState => {
     name: 'Honey',
     bond: 50, // Start at neutral
     honeyCount: 3, // Start with 3 honey
+    totalHoneyEarned: 0,
     lastInteractionAt: now,
     lastCheckedAt: now,
   };
@@ -35,6 +37,8 @@ interface BeeStore {
   // Selectors
   getBeeStatus: () => BeeStatusInfo;
   isGrumpy: () => boolean;
+  getCurrentLevel: () => BeeLevel;
+  getLevelProgress: () => { current: BeeLevel; next: BeeLevel | null; progress: number };
 }
 
 // Calculate days between two dates
@@ -158,6 +162,7 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
     const newState: BeeState = {
       ...bee,
       honeyCount: bee.honeyCount + amount,
+      totalHoneyEarned: (bee.totalHoneyEarned || 0) + amount,
       lastInteractionAt: now, // Completing goals counts as interaction
     };
 
@@ -246,5 +251,15 @@ export const useBeeStore = create<BeeStore>((set, get) => ({
   isGrumpy: (): boolean => {
     const { bee } = get();
     return bee.bond < 40;
+  },
+
+  getCurrentLevel: () => {
+    const { bee } = get();
+    return getLevelForHoney(bee.totalHoneyEarned || 0);
+  },
+
+  getLevelProgress: () => {
+    const { bee } = get();
+    return calcLevelProgress(bee.totalHoneyEarned || 0);
   },
 }));

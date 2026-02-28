@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { Goal, GoalRecord, GoalWithProgress, CreateGoalInput, UpdateGoalInput } from '../types';
+import { Goal, GoalRecord, GoalWithProgress, CreateGoalInput, UpdateGoalInput, InsightsData } from '../types';
 import { repository } from '../repositories';
-import { calculateProgress } from '../utils';
+import { calculateProgress, getWeekKey, getWeekLabel, calculateStreaks } from '../utils';
 
 interface GoalState {
   goals: Goal[];
@@ -20,6 +20,7 @@ interface GoalState {
   // Selectors
   getGoalWithProgress: (goalId: string) => GoalWithProgress | null;
   getAllGoalsWithProgress: () => GoalWithProgress[];
+  getInsightsData: () => InsightsData;
 }
 
 export const useGoalStore = create<GoalState>((set, get) => ({
@@ -87,5 +88,78 @@ export const useGoalStore = create<GoalState>((set, get) => ({
   getAllGoalsWithProgress: () => {
     const { goals, records } = get();
     return goals.map((goal) => calculateProgress(goal, records));
+  },
+
+  getInsightsData: (): InsightsData => {
+    const { goals, records } = get();
+
+    // Weekly trends (last 8 weeks)
+    const now = new Date();
+    const weeklyMap: Record<string, { label: string; count: number }> = {};
+
+    for (let i = 7; i >= 0; i--) {
+      const weekDate = new Date(now);
+      weekDate.setDate(weekDate.getDate() - i * 7);
+      const key = getWeekKey(weekDate);
+      weeklyMap[key] = { label: getWeekLabel(weekDate), count: 0 };
+    }
+
+    records.forEach((record) => {
+      const date = new Date(record.recordedAt);
+      const key = getWeekKey(date);
+      if (weeklyMap[key]) {
+        weeklyMap[key].count++;
+      }
+    });
+
+    const weeklyTrends = Object.values(weeklyMap).map((w) => ({
+      weekLabel: w.label,
+      completionCount: w.count,
+    }));
+
+    // Day of week activity
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayCounts = new Array(7).fill(0);
+    records.forEach((record) => {
+      const day = new Date(record.recordedAt).getDay();
+      dayCounts[day]++;
+    });
+    const dayOfWeekActivity = dayLabels.map((label, i) => ({
+      day: i,
+      label,
+      count: dayCounts[i],
+    }));
+
+    // Goal streaks
+    const goalStreaks = goals.map((goal) => {
+      const goalRecords = records
+        .filter((r) => r.goalId === goal.id)
+        .map((r) => r.recordedAt);
+      const { currentStreak, bestStreak } = calculateStreaks(goalRecords);
+      return {
+        goalId: goal.id,
+        goalTitle: goal.title,
+        goalEmoji: goal.emoji,
+        currentStreak,
+        bestStreak,
+      };
+    }).filter((s) => s.bestStreak > 0)
+      .sort((a, b) => b.bestStreak - a.bestStreak);
+
+    // Overall completion rate
+    const totalTarget = goals.reduce((sum, g) => sum + g.targetCount, 0);
+    const totalCurrent = records.length;
+    const overallCompletionRate = totalTarget > 0
+      ? Math.round((totalCurrent / totalTarget) * 100)
+      : 0;
+
+    return {
+      weeklyTrends,
+      dayOfWeekActivity,
+      goalStreaks,
+      overallCompletionRate,
+      totalRecords: records.length,
+      activeGoalCount: goals.length,
+    };
   },
 }));

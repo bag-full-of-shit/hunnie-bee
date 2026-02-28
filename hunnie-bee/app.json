@@ -2,7 +2,7 @@
   "expo": {
     "name": "Hunnie-Bee",
     "slug": "hunnie-bee",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Build habits steadily: complete your goals 100 times a year with your bee companion.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,7 +32,13 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ]
     ]
   }
 }

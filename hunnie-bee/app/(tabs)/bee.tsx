@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,15 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useBeeStore } from '../../stores/beeStore';
 import { Colors, Spacing, FontSize } from '../../constants';
-import { BeeMood } from '../../types';
+import { BeeMood, BeeLevel } from '../../types';
+import { BeeEvolutionDisplay } from '../../components/bee/BeeEvolutionDisplay';
+import { LevelUpModal } from '../../components/bee/LevelUpModal';
 
 const moodBackgrounds: Record<BeeMood, string> = {
   happy: Colors.honey100,
@@ -38,11 +41,14 @@ export default function BeeScreen() {
     makeExcuse,
     getBeeStatus,
     isGrumpy,
+    getCurrentLevel,
+    getLevelProgress,
   } = useBeeStore();
 
   const [excuseText, setExcuseText] = useState('');
   const [showExcuseInput, setShowExcuseInput] = useState(false);
   const [showSpeechBubble, setShowSpeechBubble] = useState(false);
+  const [levelUpLevel, setLevelUpLevel] = useState<BeeLevel | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -52,6 +58,8 @@ export default function BeeScreen() {
 
   const beeStatus = getBeeStatus();
   const grumpy = isGrumpy();
+  const currentLevel = getCurrentLevel();
+  const levelProgress = getLevelProgress();
 
   const handleFeed = async () => {
     if (bee.honeyCount <= 0) {
@@ -94,155 +102,181 @@ export default function BeeScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
+
+  // Use level-aware emoji combined with mood
+  const displayEmoji = beeStatus.mood === 'upset'
+    ? `${currentLevel.emoji}😢`
+    : beeStatus.mood === 'grumpy'
+    ? `${currentLevel.emoji}😤`
+    : beeStatus.mood === 'happy'
+    ? `${currentLevel.emoji}✨`
+    : currentLevel.emoji;
 
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: moodBackgrounds[beeStatus.mood] }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Bee Name */}
-      <Text style={styles.beeName}>{bee.name}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Bee Name */}
+        <Text style={styles.beeName}>{bee.name}</Text>
 
-      {/* Bee Display */}
-      <View style={styles.beeContainer}>
-        <TouchableOpacity
-          onPress={() => setShowSpeechBubble(!showSpeechBubble)}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel={`${bee.name} the bee is ${beeStatus.mood}. Tap to hear what ${bee.name} has to say.`}
-        >
-          <Text style={styles.beeEmoji}>{beeStatus.emoji}</Text>
-        </TouchableOpacity>
-        {showSpeechBubble && (
-          <View style={[styles.speechBubble, !beeStatus.canChat && styles.speechBubbleGrumpy]}>
-            <Text style={[styles.beeMessage, !beeStatus.canChat && styles.beeMessageGrumpy]}>
-              "{beeStatus.message}"
-            </Text>
-          </View>
-        )}
-        {!showSpeechBubble && (
-          <Text style={styles.tapHint}>Tap to talk</Text>
-        )}
-      </View>
+        {/* Evolution Display */}
+        <BeeEvolutionDisplay
+          currentLevel={levelProgress.current}
+          nextLevel={levelProgress.next}
+          progress={levelProgress.progress}
+          totalHoneyEarned={bee.totalHoneyEarned || 0}
+        />
 
-      {/* Bond Bar */}
-      <View
-        style={styles.bondContainer}
-        accessible={true}
-        accessibilityLabel={`Bond level: ${bee.bond} percent`}
-      >
-        <View style={styles.bondHeader}>
-          <Text style={styles.bondLabel}>Bond</Text>
-          <Text style={[styles.bondValue, { color: moodColors[beeStatus.mood] }]}>
-            {bee.bond}%
-          </Text>
-        </View>
-        <View style={styles.bondBarContainer}>
-          <View
-            style={[
-              styles.bondBar,
-              { width: `${bee.bond}%`, backgroundColor: moodColors[beeStatus.mood] },
-            ]}
-          />
-        </View>
-      </View>
-
-      {/* Honey Count */}
-      <View
-        style={styles.honeyContainer}
-        accessible={true}
-        accessibilityLabel={`You have ${bee.honeyCount} honey`}
-      >
-        <Text style={styles.honeyEmoji}>🍯</Text>
-        <Text style={styles.honeyCount}>{bee.honeyCount}</Text>
-        <Text style={styles.honeyLabel}>honey</Text>
-      </View>
-
-      {/* Actions */}
-      {grumpy ? (
-        // Grumpy state: Show excuse input
-        <View style={styles.excuseContainer}>
-          {!showExcuseInput ? (
-            <TouchableOpacity
-              style={styles.excuseButton}
-              onPress={() => setShowExcuseInput(true)}
-              accessibilityRole="button"
-              accessibilityLabel={`Make an excuse to ${bee.name}. Your bee is upset and needs an explanation.`}
-            >
-              <Text style={styles.excuseButtonEmoji}>🙏</Text>
-              <Text style={styles.excuseButtonText}>Make an excuse</Text>
-              <Text style={styles.excuseButtonSubtext}>Your bee is upset. Explain yourself!</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.excuseInputContainer}>
-              <Text style={styles.excusePrompt}>Tell your bee why you were busy:</Text>
-              <TextInput
-                style={styles.excuseInput}
-                placeholder="I was really busy because..."
-                placeholderTextColor={Colors.gray400}
-                value={excuseText}
-                onChangeText={setExcuseText}
-                multiline
-                maxLength={100}
-                accessibilityLabel="Write your excuse"
-                accessibilityHint="Tell your bee why you were busy"
-              />
-              <View style={styles.excuseActions}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => {
-                    setShowExcuseInput(false);
-                    setExcuseText('');
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel excuse"
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.submitButton, !excuseText.trim() && styles.submitButtonDisabled]}
-                  onPress={handleExcuse}
-                  disabled={!excuseText.trim()}
-                  accessibilityRole="button"
-                  accessibilityLabel="Send excuse. Costs 1 honey."
-                >
-                  <Text style={styles.submitButtonText}>Send (🍯 1)</Text>
-                </TouchableOpacity>
-              </View>
+        {/* Bee Display */}
+        <View style={styles.beeContainer}>
+          <TouchableOpacity
+            onPress={() => setShowSpeechBubble(!showSpeechBubble)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`${bee.name} the bee is ${beeStatus.mood}. Tap to hear what ${bee.name} has to say.`}
+          >
+            <Text style={styles.beeEmoji}>{displayEmoji}</Text>
+          </TouchableOpacity>
+          {showSpeechBubble && (
+            <View style={[styles.speechBubble, !beeStatus.canChat && styles.speechBubbleGrumpy]}>
+              <Text style={[styles.beeMessage, !beeStatus.canChat && styles.beeMessageGrumpy]}>
+                &quot;{beeStatus.message}&quot;
+              </Text>
             </View>
           )}
+          {!showSpeechBubble && (
+            <Text style={styles.tapHint}>Tap to talk</Text>
+          )}
         </View>
-      ) : (
-        // Normal state: Show feed button
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              bee.honeyCount <= 0 && styles.actionButtonDisabled,
-            ]}
-            onPress={handleFeed}
-            disabled={bee.honeyCount <= 0}
-            accessibilityRole="button"
-            accessibilityLabel={`Give honey to ${bee.name}. Increases bond by 20 percent.${bee.honeyCount <= 0 ? ' Currently disabled, no honey available.' : ''}`}
-          >
-            <Text style={styles.actionEmoji}>🍯</Text>
-            <Text style={styles.actionText}>Give Honey</Text>
-            <Text style={styles.actionSubtext}>Bond +20</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
-      {/* Tip */}
-      <Text style={styles.tipText}>
-        {grumpy
-          ? "Your bee needs attention! Make an excuse to cheer them up."
-          : "Complete goals to earn honey!"}
-      </Text>
+        {/* Bond Bar */}
+        <View
+          style={styles.bondContainer}
+          accessible={true}
+          accessibilityLabel={`Bond level: ${bee.bond} percent`}
+        >
+          <View style={styles.bondHeader}>
+            <Text style={styles.bondLabel}>Bond</Text>
+            <Text style={[styles.bondValue, { color: moodColors[beeStatus.mood] }]}>
+              {bee.bond}%
+            </Text>
+          </View>
+          <View style={styles.bondBarContainer}>
+            <View
+              style={[
+                styles.bondBar,
+                { width: `${bee.bond}%`, backgroundColor: moodColors[beeStatus.mood] },
+              ]}
+            />
+          </View>
+        </View>
+
+        {/* Honey Count */}
+        <View
+          style={styles.honeyContainer}
+          accessible={true}
+          accessibilityLabel={`You have ${bee.honeyCount} honey`}
+        >
+          <Text style={styles.honeyEmoji}>🍯</Text>
+          <Text style={styles.honeyCount}>{bee.honeyCount}</Text>
+          <Text style={styles.honeyLabel}>honey</Text>
+        </View>
+
+        {/* Actions */}
+        {grumpy ? (
+          <View style={styles.excuseContainer}>
+            {!showExcuseInput ? (
+              <TouchableOpacity
+                style={styles.excuseButton}
+                onPress={() => setShowExcuseInput(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Make an excuse to ${bee.name}. Your bee is upset and needs an explanation.`}
+              >
+                <Text style={styles.excuseButtonEmoji}>🙏</Text>
+                <Text style={styles.excuseButtonText}>Make an excuse</Text>
+                <Text style={styles.excuseButtonSubtext}>Your bee is upset. Explain yourself!</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.excuseInputContainer}>
+                <Text style={styles.excusePrompt}>Tell your bee why you were busy:</Text>
+                <TextInput
+                  style={styles.excuseInput}
+                  placeholder="I was really busy because..."
+                  placeholderTextColor={Colors.gray400}
+                  value={excuseText}
+                  onChangeText={setExcuseText}
+                  multiline
+                  maxLength={100}
+                  accessibilityLabel="Write your excuse"
+                  accessibilityHint="Tell your bee why you were busy"
+                />
+                <View style={styles.excuseActions}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => {
+                      setShowExcuseInput(false);
+                      setExcuseText('');
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel excuse"
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.submitButton, !excuseText.trim() && styles.submitButtonDisabled]}
+                    onPress={handleExcuse}
+                    disabled={!excuseText.trim()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Send excuse. Costs 1 honey."
+                  >
+                    <Text style={styles.submitButtonText}>Send (🍯 1)</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                bee.honeyCount <= 0 && styles.actionButtonDisabled,
+              ]}
+              onPress={handleFeed}
+              disabled={bee.honeyCount <= 0}
+              accessibilityRole="button"
+              accessibilityLabel={`Give honey to ${bee.name}. Increases bond by 20 percent.${bee.honeyCount <= 0 ? ' Currently disabled, no honey available.' : ''}`}
+            >
+              <Text style={styles.actionEmoji}>🍯</Text>
+              <Text style={styles.actionText}>Give Honey</Text>
+              <Text style={styles.actionSubtext}>Bond +20</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Tip */}
+        <Text style={styles.tipText}>
+          {grumpy
+            ? 'Your bee needs attention! Make an excuse to cheer them up.'
+            : 'Complete goals to earn honey!'}
+        </Text>
+      </ScrollView>
+
+      {/* Level Up Modal */}
+      {levelUpLevel && (
+        <LevelUpModal
+          visible={!!levelUpLevel}
+          newLevel={levelUpLevel}
+          onDismiss={() => setLevelUpLevel(null)}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -250,24 +284,25 @@ export default function BeeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
     padding: Spacing.base,
     alignItems: 'center',
   },
   loadingText: {
     fontSize: FontSize.body,
     color: Colors.gray500,
-    marginTop: 100,
   },
   beeName: {
     fontSize: FontSize.h2,
     fontWeight: '700',
     color: Colors.gray800,
-    marginTop: Spacing.xl,
+    marginTop: Spacing.lg,
     marginBottom: Spacing.base,
   },
   beeContainer: {
     alignItems: 'center',
-    marginVertical: Spacing.lg,
+    marginVertical: Spacing.md,
   },
   beeEmoji: {
     fontSize: 80,
@@ -484,5 +519,6 @@ const styles = StyleSheet.create({
     color: Colors.gray500,
     textAlign: 'center',
     paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing['2xl'],
   },
 });

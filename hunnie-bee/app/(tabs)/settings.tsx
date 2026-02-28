@@ -1,21 +1,26 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Linking, Switch, ScrollView } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGoalStore } from '../../stores/goalStore';
 import { useBeeStore } from '../../stores/beeStore';
+import { useReminderStore } from '../../stores/reminderStore';
 import { Colors, Spacing, FontSize } from '../../constants';
+import { requestPermissions, scheduleGoalReminder, cancelGoalReminder, cancelAllReminders } from '../../utils/notifications';
+import { ReminderToggle } from '../../components/settings/ReminderToggle';
 
 export default function SettingsScreen() {
-  const loadData = useGoalStore((state) => state.loadData);
+  const { goals, loadData } = useGoalStore();
   const { bee, loadBeeState, renameBee } = useBeeStore();
+  const { settings, setGlobalEnabled, setGoalReminder, loadSettings } = useReminderStore();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
   useFocusEffect(
     useCallback(() => {
       loadBeeState();
-    }, [loadBeeState])
+      loadSettings();
+    }, [loadBeeState, loadSettings])
   );
 
   const handleStartEdit = () => {
@@ -30,6 +35,44 @@ export default function SettingsScreen() {
     setEditingName(false);
   };
 
+  const handleGlobalToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestPermissions();
+      if (!granted) {
+        Alert.alert(
+          'Permissions Required',
+          'Please enable notifications in Settings to receive reminders.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    } else {
+      await cancelAllReminders();
+    }
+    await setGlobalEnabled(enabled);
+  };
+
+  const handleReminderToggle = async (goalId: string, enabled: boolean) => {
+    await setGoalReminder(goalId, enabled);
+    const goal = goals.find((g) => g.id === goalId);
+    if (goal) {
+      if (enabled) {
+        const reminder = { goalId, enabled: true, hour: 9, minute: 0 };
+        await scheduleGoalReminder(goal, reminder);
+      } else {
+        await cancelGoalReminder(goalId);
+      }
+    }
+  };
+
+  const handleTimeChange = async (goalId: string, hour: number, minute: number) => {
+    await setGoalReminder(goalId, true, hour, minute);
+    const goal = goals.find((g) => g.id === goalId);
+    if (goal) {
+      await scheduleGoalReminder(goal, { goalId, enabled: true, hour, minute });
+    }
+  };
+
   const handleClearData = () => {
     Alert.alert(
       'Reset Data',
@@ -40,6 +83,7 @@ export default function SettingsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            await cancelAllReminders();
             await AsyncStorage.clear();
             await loadData();
             Alert.alert('Done', 'All data has been deleted.');
@@ -50,7 +94,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* Bee Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your Bee</Text>
@@ -91,12 +135,47 @@ export default function SettingsScreen() {
         )}
       </View>
 
+      {/* Notifications Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Notifications</Text>
+        <View style={styles.item}>
+          <Text style={styles.itemLabel}>Enable Reminders</Text>
+          <Switch
+            value={settings.globalEnabled}
+            onValueChange={handleGlobalToggle}
+            trackColor={{ false: Colors.gray300, true: Colors.honey300 }}
+            thumbColor={settings.globalEnabled ? Colors.honey500 : Colors.gray100}
+          />
+        </View>
+        {settings.globalEnabled && goals.length > 0 && (
+          <View>
+            {goals.map((goal) => {
+              const reminder = settings.reminders.find((r) => r.goalId === goal.id);
+              return (
+                <ReminderToggle
+                  key={goal.id}
+                  goal={goal}
+                  reminder={reminder}
+                  onToggle={handleReminderToggle}
+                  onTimeChange={handleTimeChange}
+                />
+              );
+            })}
+          </View>
+        )}
+        {settings.globalEnabled && goals.length === 0 && (
+          <View style={styles.item}>
+            <Text style={styles.emptyHint}>Create goals first to set reminders</Text>
+          </View>
+        )}
+      </View>
+
       {/* App Info Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>App Info</Text>
         <View style={styles.item}>
           <Text style={styles.itemLabel}>Version</Text>
-          <Text style={styles.itemValue}>1.0.0</Text>
+          <Text style={styles.itemValue}>1.1.0</Text>
         </View>
         <View style={styles.item}>
           <Text style={styles.itemLabel}>Developer</Text>
@@ -137,7 +216,7 @@ export default function SettingsScreen() {
           Build habits, one step at a time
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -213,6 +292,11 @@ const styles = StyleSheet.create({
     color: Colors.honey500,
     marginTop: 2,
   },
+  emptyHint: {
+    fontSize: FontSize.bodyS,
+    color: Colors.gray400,
+    fontStyle: 'italic',
+  },
   linkArrow: {
     fontSize: FontSize.h3,
     color: Colors.gray400,
@@ -225,7 +309,7 @@ const styles = StyleSheet.create({
     color: Colors.error,
   },
   footer: {
-    flex: 1,
+    paddingVertical: Spacing['3xl'],
     justifyContent: 'center',
     alignItems: 'center',
   },
